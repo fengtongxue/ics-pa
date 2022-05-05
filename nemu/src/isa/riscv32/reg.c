@@ -8,7 +8,13 @@ const char *regs[] = {
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 };
 
+// Print the names and values of all registers except floating-point registers
 void isa_reg_display() {
+  for (size_t i = 0; i < 32; i++)
+  {
+    printf("%*s   ", 10, regs[i]);
+    printf("%*d   \n", 15, cpu.gpr[i]._32);
+  }
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
