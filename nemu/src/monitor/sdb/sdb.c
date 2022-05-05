@@ -8,6 +8,7 @@ static int is_batch_mode = false;
 
 void init_regex();
 void init_wp_pool();
+int examine_addr(int count, word_t addr);
 
 /* We use the `readline' library to provide more flexibility to read from stdin. */
 static char* rl_gets() {
@@ -39,6 +40,41 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 
+static int cmd_info(char *args) {
+  /* showing inner debug */
+  char *arg = strtok(NULL, " ");
+  
+  if (arg == NULL) {
+    /* no argument given */
+    printf("usage: - info r show register \n");
+  }
+  else {
+    char *token = strtok(NULL, arg);
+    if (strcmp(token, "r\n") == 0) {
+      isa_reg_display();
+    } else {
+      printf("usage: - info r show register \n");
+    }
+  }
+  return 0;
+}
+
+static int cmd_x(char *args) {
+  /* examine addr value */
+  int count;
+  word_t addr;
+  char* token, *token2;
+
+  token = strtok(NULL, " ");
+  count = (int)strtol(token, NULL, 10);
+
+  token2 = strtok(NULL, " ");
+  addr = (word_t)strtol(token2, NULL, 16);
+  printf("examine count addr: %d,  0x%x\n" , count, addr);
+  examine_addr(count, addr);
+  return 0;
+}
+
 static struct {
   const char *name;
   const char *description;
@@ -47,6 +83,8 @@ static struct {
   { "help", "Display informations about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
+  { "x", "examine addr value, e.g.  gdb: x/5i $pc-6, sdb:  x 5 addr", cmd_x},
+  {"info", "Generic command for showing things about the program being debugged", cmd_info}
 
   /* TODO: Add more commands */
 
