@@ -6,10 +6,10 @@
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256, TK_EQ,
+  TK_NOTYPE = 256, TK_EQ, TK_PLUS, TK_INTDEC, 
+  
 
   /* TODO: Add more token types */
-
 };
 
 static struct rule {
@@ -19,10 +19,18 @@ static struct rule {
 
   /* TODO: Add more rules.
    * Pay attention to the precedence level of different rules.
+
+十进制整数
++, -, *, /
+(, )
+空格串(一个或多个空格)
+
    */
 
+  {"\\b[0-9]+\\b", TK_INTDEC},  // dec int
+  
   {" +", TK_NOTYPE},    // spaces
-  {"\\+", '+'},         // plus
+  {"\\+", TK_PLUS},         // plus
   {"==", TK_EQ},        // equal
 };
 
@@ -51,17 +59,25 @@ typedef struct token {
   int type;
   char str[32];
 } Token;
+/*
+todo:
+  会匹配多个结果， 重复生成 token
 
+*/
 static Token tokens[32] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
 static bool make_token(char *e) {
   int position = 0;
+  int token_index = 0;
   int i;
   regmatch_t pmatch;
 
   nr_token = 0;
 
+  Token t;
+
+  // 匹配到了， 开始 算了不写了
   while (e[position] != '\0') {
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
@@ -74,14 +90,28 @@ static bool make_token(char *e) {
 
         position += substr_len;
 
-        /* TODO: Now a new token is recognized with rules[i]. Add codes
-         * to record the token in the array `tokens'. For certain types
-         * of tokens, some extra actions should be performed.
-         */
-
+        // 为什么不能在 switch 里面声明变量啊        
+        // todo 超出长度暂时不用
+        assert(substr_len <= 32);
+        
+        printf("rules[i].token_type: %d\n", rules[i].token_type);
         switch (rules[i].token_type) {
-          default: TODO();
+          case TK_INTDEC:
+            t.type = TK_INTDEC;
+            strncpy(t.str, e, (size_t) substr_len);
+            tokens[token_index++] = t;
+            break;
+          case TK_NOTYPE:
+            t.type = TK_PLUS;
+            tokens[token_index++] = t;
+            break;
+          case TK_EQ:
+            t.type = TK_EQ;
+            tokens[token_index++] = t;            
+            break;
         }
+        printf("toekns len: %d,  \n", token_index);
+
 
         break;
       }
@@ -98,13 +128,12 @@ static bool make_token(char *e) {
 
 
 word_t expr(char *e, bool *success) {
+  printf("call expr");
+
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
-
-  /* TODO: Insert codes to evaluate the expression. */
-  TODO();
 
   return 0;
 }

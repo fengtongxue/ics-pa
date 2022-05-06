@@ -70,8 +70,15 @@ static int cmd_x(char *args) {
 
   token2 = strtok(NULL, " ");
   addr = (word_t)strtol(token2, NULL, 16);
-  printf("examine count addr: %d,  0x%x\n" , count, addr);
+  printf("examine count addrp: %d,  0x%x\n" , count, addr);
   examine_addr(count, addr);
+  return 0;
+}
+
+static int cmd_p(char *args) {
+  // print {{ expr }}
+  bool success;
+  expr(args, &success);
   return 0;
 }
 
@@ -84,7 +91,8 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "x", "examine addr value, e.g.  gdb: x/5i $pc-6, sdb:  x 5 addr", cmd_x},
-  {"info", "Generic command for showing things about the program being debugged", cmd_info}
+  {"info", "Generic command for showing things about the program being debugged", cmd_info},
+  {"p", "print expr", cmd_p}
 
   /* TODO: Add more commands */
 
