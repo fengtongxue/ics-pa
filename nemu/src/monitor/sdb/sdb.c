@@ -78,7 +78,12 @@ static int cmd_x(char *args) {
 static int cmd_p(char *args) {
   // print {{ expr }}
   bool success;
-  expr(args, &success);
+  int v = expr(args, &success);
+  if (success) {
+    printf("success, p: %d\n", v);
+  } else {
+    printf("p evabl error\n");
+  }
   return 0;
 }
 
