@@ -1,4 +1,5 @@
 #include <isa.h>
+#include <memory/paddr.h>
 
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
@@ -15,7 +16,9 @@ enum {
   TK_RightBracket = 262,
 
   TK_REGS = 263,     // register
+  TK_DEREF,          // * 解引用
 
+  TK_HEX,            // hex value
   /* TODO: Add more token types */
 };
 
@@ -29,15 +32,16 @@ static struct rule {
    */
 
   {"\\b[0-9]+\\b", TK_INTDEC},  // dec int
-  {" ", TK_NOTYPE}, // space
-  {"\\+", TK_PLUS},         // plus
-  {"==", TK_EQ},        // equal
+  {"0x[0-9]+", TK_HEX},
+  {" ", TK_NOTYPE},             // space
+  {"\\+", TK_PLUS},             // plus
+  {"==", TK_EQ},                // equal
 
   {"\\$\\w+", TK_REGS},
 
-  {"\\(", TK_LeftBracket},  // (
-  {"\\)", TK_RightBracket},  // )
-  {"\\*", TK_Multi},       // *
+  {"\\(", TK_LeftBracket},      // (
+  {"\\)", TK_RightBracket},     // )
+  {"\\*", TK_Multi},            // *
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -63,7 +67,7 @@ void init_regex() {
 
 typedef struct token {
   int type;
-  int token_value;
+  word_t token_value;
   char str[32];
 } Token;
 
@@ -77,7 +81,6 @@ static int nr_token __attribute__((used))  = 0;
 
 void
 print_token(Token t) {
-  printf("t.type in print token: %d\n", t.type);
   switch (t.type)
   {
   case TK_PLUS:
@@ -95,13 +98,19 @@ print_token(Token t) {
   case TK_INTDEC:
     printf("type: '数字'");
     printf("value: '%d'\n", t.token_value);
+  case TK_HEX:
+    printf("type: '16进制数字'");
+    printf("value: 0x'%s', 10进制 : %u\n", t.str, t.token_value);
+    break;
+  case TK_DEREF:
+    printf("type: '解引用'\n");
     break;
   case TK_REGS:
     printf("type: 寄存器");
     printf("value: '%s'\n", t.str);
     break;
   default:
-    assert(0);
+    panic("Print Token unkonwn type: %d, str: %s\n", t.type, t.str);
   }
 }
 
@@ -151,34 +160,50 @@ static bool make_token(char *e) {
             t.type = TK_INTDEC;
             char *s = malloc(10);
             strncpy(s, substr_start, (size_t) substr_len);
-            t.token_value = (int)strtol(s, NULL, 10);
+            t.token_value = strtol(s, NULL, 10);
+            tokens[nr_token++] = t;
+            break;
+
+          case TK_HEX:
+            t.type = TK_HEX;
+            char *s2 = malloc(20);
+            strncpy(s2, substr_start, (size_t) substr_len);
+            strcpy(t.str, s2);
+            t.token_value =  strtol(s2, NULL, 16);
+            tokens[nr_token++] = t;
             break;
           
           case TK_PLUS:
             t.type = TK_PLUS;
+            tokens[nr_token++] = t;
             break;
           case TK_Multi:
             t.type = TK_Multi;
+            tokens[nr_token++] = t;
             break;
           
           case TK_REGS:
             t.type = TK_REGS;
             strncpy(t.str, substr_start+1, (size_t) substr_len - 1);
+            tokens[nr_token++] = t;
             break;
 
           case TK_EQ:
             t.type = TK_EQ;
+            tokens[nr_token++] = t;
             break;
           case TK_LeftBracket:
             t.type = TK_LeftBracket;
+            tokens[nr_token++] = t;
             break;
           case TK_RightBracket:
             t.type = TK_RightBracket;
+            tokens[nr_token++] = t;
             break;
           default:
-            assert(0);
+            print_token(tokens[nr_token]);
+            panic("make token unknown type\n");
         }
-        tokens[nr_token++] = t;
         break;
       }
     }
@@ -271,6 +296,8 @@ int main_op(int p, int q) {
 
 
 // token list start, end
+// eval 怎么处理 * token
+
 int eval(int p, int q) {  
   print_tokens(p, q);
   if (p > q) {
@@ -292,6 +319,16 @@ int eval(int p, int q) {
       tv = tokens[p].token_value;
     }
     return tv;
+  } 
+  // * 1232
+  else if (q - p == 1) {
+    word_t tv = 0;
+    if (tokens[p].type == TK_DEREF) {
+      word_t addr = tokens[q].token_value;
+      tv = paddr_read(addr, 1);
+      printf("addr: %u, value: %d\n", addr, tv);
+    }
+    return tv;
   }
   else if (check_parentheses(p, q) == true) {
     return eval(p + 1, q - 1);
@@ -306,6 +343,7 @@ int eval(int p, int q) {
 
     int val1 = eval(p,  o - 1);
     int val2 = eval(o + 1, q);
+
     switch (tokens[o].type) {
       // +
       case TK_PLUS: 
@@ -317,6 +355,7 @@ int eval(int p, int q) {
         printf("val1 * val2: %d, %d\n", val1, val2);
         return val1 * val2;
 
+      
     //   case '/': /* ... */
       default: assert(0);
     }
@@ -324,6 +363,13 @@ int eval(int p, int q) {
   }
 }
 
+bool certain_type(int type) {
+  bool v = false;
+  if (type == TK_PLUS || type == TK_PLUS) {
+    v = true;
+  }
+  return v;
+}
 
 word_t expr(char *e, bool *success) {
   printf("call expr\n");
@@ -332,7 +378,15 @@ word_t expr(char *e, bool *success) {
     *success = false;
     return 0;
   }
-  // eval
+
+  // format 解引用 token
+  // *a
+  // a + *b
+  for (int i = 0; i < nr_token; i ++) {
+    if (tokens[i].type == TK_Multi && (i == 0 || certain_type(tokens[i - 1].type))) {
+      tokens[i].type = TK_DEREF;
+    }
+  }
   
   int v = eval(0, nr_token);
     *success = true;
