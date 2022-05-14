@@ -11,7 +11,11 @@ enum {
   TK_INTDEC = 258,  
   TK_PLUS = 259, 
   TK_Multi = 260, // 260
-  TK_LeftBracket, TK_RightBracket,
+  TK_LeftBracket = 261, 
+  TK_RightBracket = 262,
+
+  TK_REGS = 263,     // register
+
   /* TODO: Add more token types */
 };
 
@@ -28,6 +32,8 @@ static struct rule {
   {" ", TK_NOTYPE}, // space
   {"\\+", TK_PLUS},         // plus
   {"==", TK_EQ},        // equal
+
+  {"\\$\\w+", TK_REGS},
 
   {"\\(", TK_LeftBracket},  // (
   {"\\)", TK_RightBracket},  // )
@@ -61,6 +67,11 @@ typedef struct token {
   char str[32];
 } Token;
 
+Token new_token() {
+  Token t = {0, 0, {0}};
+  return t;
+}
+
 static Token tokens[32] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
@@ -84,6 +95,10 @@ print_token(Token t) {
   case TK_INTDEC:
     printf("type: '数字'");
     printf("value: '%d'\n", t.token_value);
+    break;
+  case TK_REGS:
+    printf("type: 寄存器");
+    printf("value: '%s'\n", t.str);
     break;
   default:
     assert(0);
@@ -111,9 +126,10 @@ static bool make_token(char *e) {
   int i;
   regmatch_t pmatch;
   nr_token = 0;
-  Token t;
 
   while (e[position] != '\0') {
+    Token t = new_token();
+
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
@@ -125,6 +141,7 @@ static bool make_token(char *e) {
 
         position += substr_len;
 
+
         // todo 超出长度暂时不用
         assert(substr_len <= 32);
         switch (rules[i].token_type) {
@@ -135,29 +152,33 @@ static bool make_token(char *e) {
             char *s = malloc(10);
             strncpy(s, substr_start, (size_t) substr_len);
             t.token_value = (int)strtol(s, NULL, 10);
-            tokens[nr_token++] = t;
             break;
+          
           case TK_PLUS:
             t.type = TK_PLUS;
-            tokens[nr_token++] = t;
-            break;
-          case TK_EQ:
-            t.type = TK_EQ;
-            tokens[nr_token++] = t;            
-            break;
-          case TK_LeftBracket:
-            t.type = TK_LeftBracket;
-            tokens[nr_token++] = t;
-            break;
-          case TK_RightBracket:
-            t.type = TK_RightBracket;
-            tokens[nr_token++] = t;
             break;
           case TK_Multi:
             t.type = TK_Multi;
-            tokens[nr_token++] = t;
             break;
+          
+          case TK_REGS:
+            t.type = TK_REGS;
+            strncpy(t.str, substr_start+1, (size_t) substr_len - 1);
+            break;
+
+          case TK_EQ:
+            t.type = TK_EQ;
+            break;
+          case TK_LeftBracket:
+            t.type = TK_LeftBracket;
+            break;
+          case TK_RightBracket:
+            t.type = TK_RightBracket;
+            break;
+          default:
+            assert(0);
         }
+        tokens[nr_token++] = t;
         break;
       }
     }
@@ -256,8 +277,21 @@ int eval(int p, int q) {
     printf("eval token list start > end: %d, %d\n", p, q);
     assert(0);
   }
+  // eval one token
   else if (p == q) {
-    return tokens[p].token_value;
+    word_t tv = 0;
+    if (tokens[p].type == TK_REGS) {
+      bool success = true;
+      word_t v = isa_reg_str2val(tokens[p].str, &success);
+      if (success) {
+        printf("token reg is : %s, vlaue: %d\n", tokens[p].str, v); 
+      } else {
+        printf("call p reg error");
+      }
+    } else {
+      tv = tokens[p].token_value;
+    }
+    return tv;
   }
   else if (check_parentheses(p, q) == true) {
     return eval(p + 1, q - 1);

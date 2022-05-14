@@ -42,19 +42,15 @@ static int cmd_help(char *args);
 
 static int cmd_info(char *args) {
   /* showing inner debug */
-  char *arg = strtok(NULL, " ");
+  char *arg = strtok(args, " ");
   
   if (arg == NULL) {
     /* no argument given */
     printf("usage: - info r show register \n");
-  }
-  else {
-    char *token = strtok(NULL, arg);
-    if (strcmp(token, "r\n") == 0) {
+  } else if (strcmp(arg, "r") == 0) {
       isa_reg_display();
-    } else {
+  } else {
       printf("usage: - info r show register \n");
-    }
   }
   return 0;
 }
@@ -100,7 +96,10 @@ static struct {
   {"p", "print expr", cmd_p}
 
   /* TODO: Add more commands */
-
+/*
+  | <reg_name>              # 以"$"开头
+  | "*" <expr>              # 指针解引用
+*/
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -115,8 +114,7 @@ static int cmd_help(char *args) {
     for (i = 0; i < NR_CMD; i ++) {
       printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
     }
-  }
-  else {
+  } else {
     for (i = 0; i < NR_CMD; i ++) {
       if (strcmp(arg, cmd_table[i].name) == 0) {
         printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
