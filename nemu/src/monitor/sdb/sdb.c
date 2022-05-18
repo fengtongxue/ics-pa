@@ -83,6 +83,23 @@ static int cmd_p(char *args) {
   return 0;
 }
 
+// Add watch point  
+// w *0x80000        // w EXPR
+static int cmd_w(char *args ) {
+  printf("cmd w: %s\n", args);
+  WP* wp = new_wp();
+  strcpy(wp->expr, args);
+  bool success;
+  wp->value = expr(args, &success);
+  if (!success) {
+    // warnning expr error
+    panic("Add watchpoint expr error");
+  }
+  printf("Add watchpoint: %s, %d\n", wp->expr, wp->value);
+  return 0;
+}
+
+
 static struct {
   const char *name;
   const char *description;
@@ -93,7 +110,9 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "x", "examine addr value, e.g.  gdb: x/5i $pc-6, sdb:  x 5 addr", cmd_x},
   {"info", "Generic command for showing things about the program being debugged", cmd_info},
-  {"p", "print expr", cmd_p}
+  {"p", "print expr", cmd_p},
+
+  {"w", "Add watchpoints, e.g. w *0x80000000", cmd_w},
 
   /* TODO: Add more commands */
 /*
@@ -168,10 +187,15 @@ void sdb_mainloop() {
   }
 }
 
+void LinkTest();
+
 void init_sdb() {
   /* Compile the regular expressions. */
   init_regex();
 
   /* Initialize the watchpoint pool. */
   init_wp_pool();
+  
+  // Test tmp
+  // LinkTest();
 }

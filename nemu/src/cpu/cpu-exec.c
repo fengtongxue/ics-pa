@@ -20,6 +20,7 @@ rtlreg_t tmp_reg[4];
 
 void device_update();
 void fetch_decode(Decode *s, vaddr_t pc);
+void check_watchpoints();
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -27,6 +28,10 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
+  
+  // 怎么测呢   
+  Log("call tarce and diffetsetstsetset");
+  check_watchpoints();
 }
 
 #include <isa-exec.h>
