@@ -48,7 +48,10 @@ static int cmd_info(char *args) {
     /* no argument given */
     printf("usage: - info r show register \n");
   } else if (strcmp(arg, "r") == 0) {
-      isa_reg_display();
+    isa_reg_display();
+  } else if (strcmp(arg, "w") == 0) {
+    // print all watchpoints
+    watchpoints_dispaly();  
   } else {
       printf("usage: - info r show register \n");
   }
@@ -96,6 +99,7 @@ static int cmd_w(char *args ) {
     panic("Add watchpoint expr error");
   }
   printf("Add watchpoint: %s, %d\n", wp->expr, wp->value);
+  workinglinkList_add(wp);
   return 0;
 }
 

@@ -16,4 +16,7 @@ typedef struct watchpoint {
 WP* new_wp();
 void free_wp(WP *wp);
 
+// head 链表添加工作 node
+void workinglinkList_add(WP *wp);
+void watchpoints_dispaly();
 #endif

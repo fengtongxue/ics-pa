@@ -365,7 +365,7 @@ int eval(int p, int q) {
 
 bool certain_type(int type) {
   bool v = false;
-  if (type == TK_PLUS || type == TK_PLUS) {
+  if (type == TK_PLUS || type == TK_Multi) {
     v = true;
   }
   return v;

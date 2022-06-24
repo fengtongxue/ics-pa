@@ -29,7 +29,6 @@ Num     Type           Disp Enb Address            What
 ----------
 d watchpoints
 
-
 -----
 我们可以把监视点的检查放在trace_and_difftest()中, 
 并用一个新的宏 CONFIG_WATCHPOINT把检查监视点的代码包起来;

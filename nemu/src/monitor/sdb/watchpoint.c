@@ -60,11 +60,19 @@ linkList_pop1(WP* linkList) {
 // list .next = node
 // node. next = head
 void
-linkList_add(WP* linkList, WP* node) {
-  WP* head = linkList->next;
-  linkList->next = node;
-  node->next = head;
+workinglinkList_add(WP* node) {
+  WP* headnode = head->next;
+  head->next = node;
+  node->next = headnode;
 }
+
+void
+freelinkList_add(WP* node) {
+  WP* headnode = free_->next;
+  head->next = node;
+  node->next = headnode;
+}
+
 
 void 
 LinkTest() {
@@ -79,9 +87,7 @@ LinkTest() {
   printf("NO: %d\n", wp->NO);
 
   log_linkList(free_);
-
-  linkList_add(free_, wp);
-  
+  // linkList_add(free_, wp);
   log_linkList(free_);
 
 }
@@ -102,12 +108,14 @@ new_wp() {
 // 为了简单起见, 此时可以通过assert(0)马上终止程序
 void 
 free_wp(WP *wp) {
-  linkList_add(free_ , wp);
+  freelinkList_add(wp);
 }
 
 /*
-
-*/
+ todo 
+ watch point $t0 没有暂停
+ 
+*/ 
 void check_watchpoints() {
   WP *wp;
   bool success;
@@ -127,6 +135,14 @@ void check_watchpoints() {
     }
     wp = wp->next;
   }
-  
+}
 
+void
+watchpoints_dispaly() {
+  printf("Num     Type           Disp Enb Address            What\n");
+  WP *wp = head->next;
+  while (wp != NULL) {
+    printf("%d      hw watchpoint  Disp Enb %s\n", wp->NO, wp->expr);
+    wp = wp->next;
+  }
 }
